@@ -145,11 +145,12 @@ var Calendar = (function () {
       if (_selectedShift !== 'all' && _selectedShift !== s.key) return;
       var sc    = CONFIG.STATUS[s.en] || CONFIG.STATUS.off;
       var shift = CONFIG.SHIFTS[s.key] || {};
-      html += '<div class="cal-shift-row">' +
-        '<span class="cal-shift-label" style="background:' + (colors[s.key] || shift.solid || '#999') + '">' +
+      var color = colors[s.key] || shift.solid || '#999';
+      html += '<div class="cal-shift-pill">' +
+        '<span class="csp-label" style="background:' + color + '">' +
           (shift.label || s.key) +
         '</span>' +
-        '<span class="cal-status-badge" style="background:' + sc.bg + ';color:' + sc.text + ';border-color:' + sc.badge + '">' +
+        '<span class="csp-status" style="background:' + sc.bg + ';color:' + sc.text + '">' +
           sc.icon + ' ' + sc.label +
         '</span>' +
       '</div>';
