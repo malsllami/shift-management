@@ -79,10 +79,68 @@ var App = (function () {
       Auth.login(empId, password).then(function(res) {
         btn.disabled = false; btn.textContent = 'دخول';
         if (res.ok) {
+          if (res.force_change) {
+            _renderChangePasswordForm();
+          } else {
+            _showApp();
+            navigate('dashboard');
+          }
+        } else {
+          errEl.textContent = _mapError(res.error);
+          errEl.style.display = 'block';
+        }
+      });
+    };
+  }
+
+  function _renderChangePasswordForm() {
+    var el = document.getElementById('login-form-container');
+    if (!el) return;
+    el.innerHTML =
+      '<div class="change-pass-notice">🔒 يجب تغيير كلمة المرور الافتراضية قبل المتابعة</div>' +
+      '<form id="chpass-form" novalidate>' +
+        '<div class="login-field">' +
+          '<label>كلمة المرور الجديدة</label>' +
+          '<input type="password" id="chpass-new" class="login-input" placeholder="6 أحرف على الأقل" required>' +
+        '</div>' +
+        '<div class="login-field">' +
+          '<label>تأكيد كلمة المرور</label>' +
+          '<input type="password" id="chpass-confirm" class="login-input" placeholder="••••••••" required>' +
+        '</div>' +
+        '<div id="chpass-error" class="login-error" style="display:none"></div>' +
+        '<button type="submit" class="btn-login" id="btn-chpass">تغيير وحفظ</button>' +
+      '</form>';
+
+    document.getElementById('chpass-form').onsubmit = function(e) {
+      e.preventDefault();
+      var newPass = document.getElementById('chpass-new').value;
+      var confirm = document.getElementById('chpass-confirm').value;
+      var errEl   = document.getElementById('chpass-error');
+      var btn     = document.getElementById('btn-chpass');
+
+      if (newPass.length < 6) {
+        errEl.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+        errEl.style.display = 'block'; return;
+      }
+      if (newPass !== confirm) {
+        errEl.textContent = 'كلمتا المرور غير متطابقتين';
+        errEl.style.display = 'block'; return;
+      }
+
+      btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
+      errEl.style.display = 'none';
+
+      API.changePassword(newPass).then(function(res) {
+        btn.disabled = false; btn.textContent = 'تغيير وحفظ';
+        if (res.ok) {
           _showApp();
           navigate('dashboard');
         } else {
-          errEl.textContent = _mapError(res.error);
+          var errMap = {
+            password_too_short:       'كلمة المرور قصيرة جداً (6 أحرف على الأقل)',
+            password_same_as_default: 'لا يمكن استخدام كلمة المرور الافتراضية'
+          };
+          errEl.textContent = errMap[res.error] || _mapError(res.error);
           errEl.style.display = 'block';
         }
       });
