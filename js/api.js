@@ -59,6 +59,7 @@ var API = (function () {
     getDashboard:     function()                { return _call({ action:'getDashboard' }); },
     getSettings:      function()                { return _call({ action:'getSettings' }); },
     updateSettings:   function(settings)        { return _call({ action:'updateSettings', settings:settings }); },
-    changePassword:   function(newPassword)     { return _call({ action:'changePassword', newPassword:newPassword }); }
+    changePassword:   function(newPassword)     { return _call({ action:'changePassword', newPassword:newPassword }); },
+    yearlyLeaveReset: function()               { return _call({ action:'yearlyLeaveReset' }); }
   };
 })();
