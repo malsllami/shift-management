@@ -58,6 +58,7 @@ var API = (function () {
     markNotifRead:    function(no)              { return _call({ action:'markNotifRead', no:no }); },
     getDashboard:     function()                { return _call({ action:'getDashboard' }); },
     getSettings:      function()                { return _call({ action:'getSettings' }); },
-    updateSettings:   function(settings)        { return _call({ action:'updateSettings', settings:settings }); }
+    updateSettings:   function(settings)        { return _call({ action:'updateSettings', settings:settings }); },
+    changePassword:   function(newPassword)     { return _call({ action:'changePassword', newPassword:newPassword }); }
   };
 })();
