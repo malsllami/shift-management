@@ -9,7 +9,7 @@ var Auth = (function () {
 
   function login(empId, password) {
     return API.login(empId, password).then(function(res) {
-      if (res.success) {
+      if (res.ok) {
         _user = res.user;
         _user.token = res.token;
         _adminMode = true;
