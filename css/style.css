@@ -869,6 +869,26 @@ textarea.form-input { resize: vertical; min-height: 70px; }
    ============================================================ */
 .settings-container { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 2px 8px var(--shadow); max-width: 700px; }
 
+.settings-danger-zone {
+  margin-top: 1.5rem; padding: 1rem 1.2rem;
+  border: 1.5px solid #FFCDD2; border-radius: var(--radius-sm);
+  background: #FFF5F5;
+}
+.settings-danger-zone h3 { font-size: 0.95rem; color: #B71C1C; margin: 0 0 0.4rem; }
+.settings-danger-zone p  { font-size: 0.82rem; color: var(--text2); margin: 0 0 0.8rem; }
+.btn-danger {
+  padding: 0.5rem 1.2rem; border-radius: var(--radius-sm);
+  background: #D32F2F; color: #fff; border: none;
+  font-size: 0.88rem; font-weight: 600; cursor: pointer;
+}
+.btn-danger:hover { background: #B71C1C; }
+.btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Overtime hours inline layout */
+.ot-hours-row { display: flex; align-items: center; gap: 0.6rem; }
+.ot-hours-input { width: 110px !important; flex: none; text-align: center; }
+.ot-hours-unit  { font-size: 0.95rem; font-weight: 700; color: var(--text2); white-space: nowrap; }
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
