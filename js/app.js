@@ -592,7 +592,7 @@ var App = (function () {
     var bg = forceBg || color.bg;
     return '<div class="expiry-row" style="background:' + bg + ';color:' + color.text + '">' +
       '<span>' + label + '</span>' +
-      '<span>' + (date||'') + '</span>' +
+      '<span>' + CONFIG.fmtDate(date||'') + '</span>' +
       '<span>' + (daysLeft >= 0 ? daysLeft + ' يوم' : 'منتهية') + '</span>' +
     '</div>';
   }
@@ -689,6 +689,11 @@ var App = (function () {
               '<button type="submit" class="btn-primary">حفظ الإعدادات</button>' +
             '</div>' +
           '</form>' +
+          '<div class="settings-danger-zone">' +
+            '<h3>إعادة تعيين الإجازات السنوية</h3>' +
+            '<p>يُعيد تعيين رصيد الإجازات السنوية لجميع الموظفين إلى القيمة المحددة في الإعدادات وتصفير الإجازات المجدولة. يتم هذا تلقائياً في بداية كل سنة ميلادية.</p>' +
+            '<button class="btn-danger" id="btn-yearly-reset">تصفير الإجازات السنوية</button>' +
+          '</div>' +
         '</div>';
 
       document.getElementById('settings-form').onsubmit = function(e) {
@@ -699,6 +704,15 @@ var App = (function () {
         });
         API.updateSettings(updates).then(function(res) {
           _toast(res.ok ? 'تم حفظ الإعدادات' : _mapError(res.error), res.ok ? 'success' : 'error');
+        });
+      };
+
+      document.getElementById('btn-yearly-reset').onclick = function() {
+        if (!confirm('سيتم إعادة تعيين رصيد الإجازات السنوية لجميع الموظفين. هل أنت متأكد؟')) return;
+        var btn = this; btn.disabled = true; btn.textContent = 'جارٍ التصفير...';
+        API.yearlyLeaveReset().then(function(res) {
+          btn.disabled = false; btn.textContent = 'تصفير الإجازات السنوية';
+          _toast(res.ok ? 'تم تصفير الإجازات بنجاح' : _mapError(res.error), res.ok ? 'success' : 'error');
         });
       };
     });
