@@ -461,7 +461,16 @@ var Forms = (function () {
             '<div class="req-row"><span>نوع الإجازة:</span><b>' + typeLabel(r.type) + '</b></div>' +
             '<div class="req-row"><span>المدة:</span><b>' + CONFIG.fmtDate(r.startDate) + ' — ' + CONFIG.fmtDate(r.endDate) + ' (' + r.days + ' يوم)</b></div>' +
             (r.empNotes ? '<div class="req-row"><span>ملاحظات:</span><span>' + r.empNotes + '</span></div>' : '') +
-            (r.revNotes ? '<div class="req-row"><span>ملاحظة المراجع:</span><span>' + r.revNotes + '</span></div>' : '') +
+            (r.revNotes && r.status === 'rejected' ?
+              '<div class="rev-note-block rev-reject"><span class="rev-note-icon">⚠</span><span class="rev-note-label">سبب الرفض:</span> ' + r.revNotes + '</div>' : '') +
+            (r.revNotes && r.status === 'approved' ?
+              '<div class="rev-note-block rev-approve"><span class="rev-note-icon">✓</span><span class="rev-note-label">ملاحظة:</span> ' + r.revNotes + '</div>' : '') +
+            (r.reviewerName && r.status !== 'pending_review' ?
+              '<div class="rev-by-row"><span class="rev-by-label">المراجع:</span>' +
+                '<span class="rev-by-name">' + r.reviewerName + '</span>' +
+                '<span class="rev-by-id">' + r.reviewer + '</span>' +
+                '<span class="rev-by-role">' + r.reviewerRole + '</span>' +
+              '</div>' : '') +
           '</div>' +
           (canRev ?
             '<div class="req-card-actions">' +
@@ -546,6 +555,14 @@ var Forms = (function () {
             '<div class="req-row"><span>التاريخ:</span><b>' + r.day + ' ' + CONFIG.fmtDate(r.date) + '</b></div>' +
             '<div class="req-row"><span>الساعات:</span><b>' + _formatHours(r.hours) + '</b></div>' +
             '<div class="req-row"><span>الملاحظات:</span><span>' + r.notes + '</span></div>' +
+            (r.status === 'rejected' ?
+              '<div class="rev-note-block rev-reject"><span class="rev-note-icon">⚠</span><span class="rev-note-label">سبب الرفض:</span> ' + (r.revNotes||'—') + '</div>' : '') +
+            (r.reviewerName && r.status !== 'pending_review' ?
+              '<div class="rev-by-row"><span class="rev-by-label">المراجع:</span>' +
+                '<span class="rev-by-name">' + r.reviewerName + '</span>' +
+                '<span class="rev-by-id">' + r.reviewer + '</span>' +
+                '<span class="rev-by-role">' + r.reviewerRole + '</span>' +
+              '</div>' : '') +
           '</div>' +
           (canRev ?
             '<div class="req-card-actions">' +
