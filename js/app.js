@@ -649,8 +649,10 @@ var App = (function () {
             _settingField('مولود',               'birth_leave_days',    cfg.birth_leave_days,    'number') +
             _settingField('وفاة',                'death_leave_days',    cfg.death_leave_days,    'number') +
             _settingField('اختبارات',            'exam_leave_days',     cfg.exam_leave_days,     'number') +
-            '<div class="form-section-title">الأمان</div>' +
-            _settingField('رمز المدير',          'admin_code', '', 'password', 'اتركه فارغاً إن لم تُرد تغييره') +
+            '<div class="form-section-title">رموز الترقية (تُحفظ مشفّرة)</div>' +
+            _settingField('رمز المدير',    'admin_code',      '', 'password', 'اتركه فارغاً إن لم تُرد تغييره') +
+            _settingField('رمز المشرف',   'supervisor_code', '', 'password', 'اتركه فارغاً إن لم تُرد تغييره') +
+            _settingField('رمز الإداري',  'viewer_code',     '', 'password', 'اتركه فارغاً إن لم تُرد تغييره') +
             '<div class="form-actions">' +
               '<button type="submit" class="btn-primary">حفظ الإعدادات</button>' +
             '</div>' +
