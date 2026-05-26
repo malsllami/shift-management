@@ -16,7 +16,11 @@ var Dashboard = (function () {
     '</div>';
 
     API.getDashboard().then(function(res) {
-      if (!res.success) return;
+      if (!res.ok) {
+        var grid = el.querySelector('.dashboard-grid');
+        if (grid) grid.innerHTML = '<div class="error-state">تعذر تحميل بيانات اللوحة — ' + (res.error || 'خطأ في الاتصال') + '</div>';
+        return;
+      }
       var d = res.data;
       _renderCards(el, d, role, user);
     });
@@ -46,8 +50,8 @@ var Dashboard = (function () {
           '<div class="card-label">المتواجدون الآن</div>' +
           '<div class="card-value">' + d.present.total + '</div>' +
           '<div class="card-sub">' +
-            '<span class="morning-badge">☀ صباح: ' + d.present['صباح'] + '</span>' +
-            '<span class="evening-badge">🌙 مساء: ' + d.present['مساء'] + '</span>' +
+            '<span class="morning-badge">☀ صباح: ' + d.present.morning + '</span>' +
+            '<span class="evening-badge">🌙 مساء: ' + d.present.evening + '</span>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -149,16 +153,16 @@ var Dashboard = (function () {
 
   function _shiftStatusCard(shifts) {
     if (!shifts) return '';
-    var sc = CONFIG.STATUS_COLORS;
+    var keyMap = { 'أ':'a', 'ب':'b', 'ج':'c', 'د':'d' };
     return '<div class="today-shifts">' +
       ['أ','ب','ج','د'].map(function(s) {
-        var key    = { 'أ': 'أ', 'ب': 'ب', 'ج': 'ج', 'د': 'د' }[s];
-        var status = shifts[key] || 'إجازة';
-        var c      = sc[status] || sc['إجازة'];
-        var icon   = status === 'صباح' ? '☀' : (status === 'مساء' ? '🌙' : '—');
-        return '<div class="today-shift-item" style="background:' + c.bg + ';border:1px solid ' + c.badge + ';color:' + c.text + '">' +
+        var k   = keyMap[s];
+        var en  = shifts[k]        || 'off';
+        var ar  = shifts[k + '_ar'] || 'إجازة';
+        var sc  = CONFIG.STATUS[en] || CONFIG.STATUS.off;
+        return '<div class="today-shift-item" style="background:' + sc.bg + ';border:1px solid ' + sc.badge + ';color:' + sc.text + '">' +
           '<span class="ts-shift">وردية ' + s + '</span>' +
-          '<span class="ts-status">' + icon + ' ' + status + '</span>' +
+          '<span class="ts-status">' + sc.icon + ' ' + ar + '</span>' +
         '</div>';
       }).join('') +
     '</div>';
