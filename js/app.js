@@ -18,6 +18,15 @@ var App = (function () {
     }
   }
 
+  // ---- Password eye toggle (global) ----
+  window._togglePw = function(inputId, eyeEl) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    eyeEl.textContent = show ? '🙈' : '👁';
+  };
+
   function showLogin() {
     _hideAll();
     document.getElementById('screen-login').style.display = 'flex';
@@ -56,7 +65,10 @@ var App = (function () {
         '</div>' +
         '<div class="login-field">' +
           '<label>كلمة المرور</label>' +
-          '<input type="password" id="login-pass" class="login-input" placeholder="••••••••" required>' +
+          '<div class="pw-wrap">' +
+            '<input type="password" id="login-pass" class="login-input" placeholder="••••••••" required>' +
+            '<button type="button" class="pw-eye" onclick="window._togglePw(\'login-pass\',this)" title="إظهار/إخفاء">👁</button>' +
+          '</div>' +
         '</div>' +
         '<div id="login-error" class="login-error" style="display:none"></div>' +
         '<button type="submit" class="btn-login" id="btn-login">دخول</button>' +
@@ -101,11 +113,17 @@ var App = (function () {
       '<form id="chpass-form" novalidate>' +
         '<div class="login-field">' +
           '<label>كلمة المرور الجديدة</label>' +
-          '<input type="password" id="chpass-new" class="login-input" placeholder="6 أحرف على الأقل" required>' +
+          '<div class="pw-wrap">' +
+            '<input type="password" id="chpass-new" class="login-input" placeholder="6 أحرف على الأقل" required>' +
+            '<button type="button" class="pw-eye" onclick="window._togglePw(\'chpass-new\',this)" title="إظهار/إخفاء">👁</button>' +
+          '</div>' +
         '</div>' +
         '<div class="login-field">' +
           '<label>تأكيد كلمة المرور</label>' +
-          '<input type="password" id="chpass-confirm" class="login-input" placeholder="••••••••" required>' +
+          '<div class="pw-wrap">' +
+            '<input type="password" id="chpass-confirm" class="login-input" placeholder="••••••••" required>' +
+            '<button type="button" class="pw-eye" onclick="window._togglePw(\'chpass-confirm\',this)" title="إظهار/إخفاء">👁</button>' +
+          '</div>' +
         '</div>' +
         '<div id="chpass-error" class="login-error" style="display:none"></div>' +
         '<button type="submit" class="btn-login" id="btn-chpass">تغيير وحفظ</button>' +
@@ -728,11 +746,15 @@ var App = (function () {
   }
 
   function _settingField(label, key, val, type, placeholder) {
-    return '<div class="form-field">' +
-      '<label>' + label + '</label>' +
-      '<input type="' + (type||'text') + '" class="form-input setting-input" data-key="' + key + '"' +
-        ' value="' + (val||'') + '"' + (placeholder ? ' placeholder="' + placeholder + '"' : '') + '>' +
-    '</div>';
+    var inputId = 'si-' + key;
+    var inputHtml = '<input type="' + (type||'text') + '" id="' + inputId + '" class="form-input setting-input" data-key="' + key + '"' +
+      ' value="' + (val||'') + '"' + (placeholder ? ' placeholder="' + placeholder + '"' : '') + '>';
+    if (type === 'password') {
+      inputHtml = '<div class="pw-wrap">' + inputHtml +
+        '<button type="button" class="pw-eye" onclick="window._togglePw(\'' + inputId + '\',this)" title="إظهار/إخفاء">👁</button>' +
+        '</div>';
+    }
+    return '<div class="form-field"><label>' + label + '</label>' + inputHtml + '</div>';
   }
 
   // ---- Helpers ----
