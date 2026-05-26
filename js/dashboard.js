@@ -2,7 +2,6 @@
 // لوحة التحكم - بطاقات الإحصائيات
 // ============================================================
 
-
 var Dashboard = (function () {
 
   function render(containerId) {
@@ -40,7 +39,7 @@ var Dashboard = (function () {
           ' — وردية ' + user.shift + '</div>' +
         '<div class="welcome-date">' + _todayLabel() + '</div>' +
       '</div>' +
-      '<div class="welcome-shift-status">' + _shiftStatusCard(d.todayShifts) + '</div>' +
+      '<div class="welcome-shift-status">' + _shiftStatusCard(d.todayShifts, role) + '</div>' +
     '</div>';
 
     // بطاقة المتواجدين الآن (للمدير والمشرف والإداري)
@@ -58,47 +57,52 @@ var Dashboard = (function () {
       '</div>';
     }
 
-    // بطاقة الطلبات اليومية (مع مؤشر تحذيري)
+    // بطاقة الطلبات الأسبوعية (المدير والمشرف)
     if (role === 'مدير' || role === 'مشرف') {
-      var dailyPct  = Math.min(100, Math.round(d.dailyReqs  / d.dailyLimit  * 100));
-      var weeklyPct = Math.min(100, Math.round(d.weeklyReqs / d.weeklyLimit * 100));
+      var weekData = d.weekData || [];
+      var limit    = d.dailyLimit || 10;
+      var todayStr = (new Date()).toISOString().slice(0, 10);
 
-      html += '<div class="dash-card requests-card">' +
+      var dayBars = weekData.map(function(day) {
+        var pct    = limit > 0 ? Math.min(100, Math.round(day.count / limit * 100)) : 0;
+        var cls    = pct >= 95 ? 'wday-danger' :
+                     pct >= 75 ? 'wday-warn75' :
+                     pct >= 65 ? 'wday-warn65' :
+                     day.count > 0 ? 'wday-safe' : 'wday-zero';
+        var isToday = day.date === todayStr ? ' wday-today' : '';
+        var name   = CONFIG.DAYS_AR[day.dow].slice(0, 3);
+        return '<div class="week-day-chip ' + cls + isToday + '">' +
+          '<span class="wdc-num">' + day.count + '</span>' +
+          '<div class="wdc-bar-wrap"><div class="wdc-bar-fill" style="height:' + pct + '%"></div></div>' +
+          '<span class="wdc-name">' + name + '</span>' +
+        '</div>';
+      }).join('');
+
+      html += '<div class="dash-card requests-week-card full-width">' +
         '<div class="card-icon">📋</div>' +
         '<div class="card-body">' +
-          '<div class="card-label">الطلبات</div>' +
-          '<div class="req-row">' +
-            '<span class="req-label">اليوم</span>' +
-            '<div class="progress-bar">' +
-              '<div class="progress-fill ' + _progressClass(dailyPct) + '" style="width:' + dailyPct + '%"></div>' +
-            '</div>' +
-            '<span class="req-count ' + _countClass(dailyPct) + '">' + d.dailyReqs + '/' + d.dailyLimit + '</span>' +
+          '<div class="week-card-top">' +
+            '<span class="card-label">الطلبات الأسبوعية</span>' +
+            '<span class="week-limit-badge">الحد اليومي: ' + limit + '</span>' +
           '</div>' +
-          '<div class="req-row">' +
-            '<span class="req-label">الأسبوع</span>' +
-            '<div class="progress-bar">' +
-              '<div class="progress-fill ' + _progressClass(weeklyPct) + '" style="width:' + weeklyPct + '%"></div>' +
-            '</div>' +
-            '<span class="req-count ' + _countClass(weeklyPct) + '">' + d.weeklyReqs + '/' + d.weeklyLimit + '</span>' +
+          '<div class="week-chart">' + dayBars + '</div>' +
+          '<div class="week-legend">' +
+            '<span class="wleg wleg-safe">طبيعي</span>' +
+            '<span class="wleg wleg-warn65">تجاوز 65%</span>' +
+            '<span class="wleg wleg-warn75">تجاوز 75%</span>' +
+            '<span class="wleg wleg-danger">95%+</span>' +
           '</div>' +
         '</div>' +
-      '</div>';
-
-      // بطاقة الطلبات المعلقة
-      html += '<div class="dash-card pending-card">' +
-        '<div class="card-icon">⏳</div>' +
-        '<div class="card-body">' +
-          '<div class="card-label">قيد المراجعة</div>' +
-          '<div class="pending-row">' +
-            '<span class="pending-item leave-pending" onclick="App.navigate(\'leaves\')">' +
-              '<span class="pending-num">' + d.pendingLeave + '</span>' +
-              '<span class="pending-lbl">إجازة</span>' +
-            '</span>' +
-            '<span class="pending-item ot-pending" onclick="App.navigate(\'overtime\')">' +
-              '<span class="pending-num">' + d.pendingOT + '</span>' +
-              '<span class="pending-lbl">أوفرتايم</span>' +
-            '</span>' +
-          '</div>' +
+        // Pending mini section inside same card
+        '<div class="week-pending-row">' +
+          '<span class="pending-chip leave-pending" onclick="App.navigate(\'leaves\')">' +
+            '<span class="pending-num">' + d.pendingLeave + '</span>' +
+            '<span class="pending-lbl">إجازة قيد المراجعة</span>' +
+          '</span>' +
+          '<span class="pending-chip ot-pending" onclick="App.navigate(\'overtime\')">' +
+            '<span class="pending-num">' + d.pendingOT + '</span>' +
+            '<span class="pending-lbl">أوفرتايم قيد المراجعة</span>' +
+          '</span>' +
         '</div>' +
       '</div>';
     }
@@ -106,12 +110,12 @@ var Dashboard = (function () {
     // بطاقة رصيد الإجازات للموظف
     if (role === 'موظف' || !Auth.isAdminMode()) {
       API.getEmployee().then(function(res) {
-        if (!res.success) return;
+        if (!res.ok) return;
         var emp = res.data;
         var leaveCard = document.getElementById('leave-balance-card');
         if (leaveCard) {
-          leaveCard.querySelector('.card-value').textContent = emp['رصيد الاجازات السنوية'] || 0;
-          leaveCard.querySelector('.remaining-val').textContent = emp['المتبقي من الاجازات'] || 0;
+          leaveCard.querySelector('.card-value').textContent = emp.annLeave || 0;
+          leaveCard.querySelector('.remaining-val').textContent = emp.remLeave || 0;
         }
       });
 
@@ -152,16 +156,21 @@ var Dashboard = (function () {
     if (grid) grid.innerHTML = html;
   }
 
-  function _shiftStatusCard(shifts) {
+  function _shiftStatusCard(shifts, role) {
     if (!shifts) return '';
-    var keyMap = { 'أ':'a', 'ب':'b', 'ج':'c', 'د':'d' };
+    var keyMap   = { 'أ':'a', 'ب':'b', 'ج':'c', 'د':'d' };
+    var canClick = (role === 'مدير' || role === 'مشرف');
     return '<div class="today-shifts">' +
       ['أ','ب','ج','د'].map(function(s) {
         var k   = keyMap[s];
-        var en  = shifts[k]        || 'off';
+        var en  = shifts[k]         || 'off';
         var ar  = shifts[k + '_ar'] || 'إجازة';
         var sc  = CONFIG.STATUS[en] || CONFIG.STATUS.off;
-        return '<div class="today-shift-item" style="background:' + sc.bg + ';border:1px solid ' + sc.badge + ';color:' + sc.text + '">' +
+        var clickAttr = canClick
+          ? ' onclick="App.navigate(\'employees\',{filterShift:\'' + s + '\'})" title="عرض موظفي الوردية ' + s + '"'
+          : '';
+        return '<div class="today-shift-item' + (canClick ? ' shift-clickable' : '') + '"' + clickAttr +
+          ' style="background:' + sc.bg + ';border:1px solid ' + sc.badge + ';color:' + sc.text + '">' +
           '<span class="ts-shift">وردية ' + s + '</span>' +
           '<span class="ts-status">' + sc.icon + ' ' + ar + '</span>' +
         '</div>';
@@ -175,18 +184,6 @@ var Dashboard = (function () {
     return CONFIG.DAYS_AR[d.getDay()] + '، ' +
            d.getDate() + ' ' + CONFIG.MONTHS_AR[d.getMonth()] + ' ' + d.getFullYear() + ' م  |  ' +
            hijri.day + ' ' + CONFIG.HIJRI_MONTHS[hijri.month-1] + ' ' + hijri.year + ' هـ';
-  }
-
-  function _progressClass(pct) {
-    if (pct >= 90) return 'progress-danger';
-    if (pct >= 70) return 'progress-warn';
-    return 'progress-safe';
-  }
-
-  function _countClass(pct) {
-    if (pct >= 90) return 'count-danger';
-    if (pct >= 70) return 'count-warn';
-    return 'count-safe';
   }
 
   function _roleClass(role) {
