@@ -47,6 +47,12 @@ var Forms = (function () {
       if (isEdit) _submitUpdateEmp(empData ? empData.empId : '');
       else        _submitAddEmp();
     };
+
+    var roleEl = document.getElementById('ef-role');
+    if (roleEl) roleEl.onchange = function() {
+      var codeField = document.getElementById('role-code-field');
+      if (codeField) codeField.style.display = this.value !== 'موظف' ? '' : 'none';
+    };
   }
 
   function _field(label, id, val, type, disabled, required) {
@@ -71,8 +77,13 @@ var Forms = (function () {
     var opts = CONFIG.ROLES.map(function(r) {
       return '<option value="' + r.label + '"' + (val === r.label ? ' selected' : '') + '>' + r.label + '</option>';
     }).join('');
+    var showCode = val && val !== 'موظف';
     return '<div class="form-field"><label>الصلاحية <span class="req">*</span></label>' +
-      '<select id="ef-role" class="form-input">' + opts + '</select></div>';
+      '<select id="ef-role" class="form-input">' + opts + '</select></div>' +
+      '<div class="form-field" id="role-code-field" style="' + (showCode ? '' : 'display:none') + '">' +
+        '<label>رمز التحقق للصلاحية <span class="req">*</span></label>' +
+        '<input type="password" id="ef-role-code" class="form-input" placeholder="أدخل رمز الصلاحية المحدد في الإعدادات">' +
+      '</div>';
   }
 
   function _regionSel(val) {
@@ -84,12 +95,14 @@ var Forms = (function () {
   }
 
   function _submitAddEmp() {
+    var role = _val('ef-role') || 'موظف';
     var emp = {
       empId:      _val('ef-empId'),
       name:       _val('ef-name'),
       phone:      _val('ef-phone'),
       shift:      _val('ef-shift'),
-      role:       _val('ef-role') || 'موظف',
+      role:       role,
+      roleCode:   role !== 'موظف' ? _val('ef-role-code') : '',
       region:     _val('ef-region'),
       center:     _val('ef-center'),
       car:        _val('ef-car'),
@@ -104,6 +117,9 @@ var Forms = (function () {
     };
     if (!emp.empId || !emp.name || !emp.password) {
       _toast('الرجاء تعبئة الحقول المطلوبة', 'error'); return;
+    }
+    if (role !== 'موظف' && !emp.roleCode) {
+      _toast('الرجاء إدخال رمز التحقق للصلاحية المحددة', 'error'); return;
     }
     _setLoading(true);
     API.addEmployee(emp).then(function(res) {
@@ -130,7 +146,15 @@ var Forms = (function () {
     };
     if (Auth.canManage()) {
       updates.shift = _val('ef-shift');
-      updates.role  = _val('ef-role');
+      var newRole = _val('ef-role');
+      updates.role = newRole;
+      if (newRole && newRole !== 'موظف') {
+        updates.roleCode = _val('ef-role-code');
+        if (!updates.roleCode) {
+          _toast('الرجاء إدخال رمز التحقق للصلاحية المحددة', 'error');
+          return;
+        }
+      }
     }
     _setLoading(true);
     API.updateEmployee(empId, updates).then(function(res) {
@@ -241,9 +265,10 @@ var Forms = (function () {
       var hijri  = Hijri.fromDate(new Date(d));
       var enSt   = _localShiftStatus(Auth.getUser().shift, dStr);
       var sc     = CONFIG.STATUS[enSt] || CONFIG.STATUS.off;
-      calHtml += '<div class="mini-cal-day" style="background:' + sc.bg + ';border:1px solid ' + sc.badge + '">' +
-        '<div class="mcd-date">' + CONFIG.DAYS_AR[d.getDay()].slice(0,3) + ' ' + d.getDate() + '</div>' +
-        '<div class="mcd-hijri">' + hijri.day + ' ' + CONFIG.HIJRI_MONTHS[hijri.month-1].slice(0,4) + '</div>' +
+      calHtml += '<div class="mini-cal-day" style="background:' + sc.bg + ';border-color:' + sc.badge + '">' +
+        '<div class="mcd-day-name">' + CONFIG.DAYS_AR[d.getDay()] + '</div>' +
+        '<div class="mcd-date">' + d.getDate() + '</div>' +
+        '<div class="mcd-hijri">' + hijri.day + ' ' + CONFIG.HIJRI_MONTHS[hijri.month-1] + '</div>' +
         '<div class="mcd-shift" style="color:' + sc.text + '">' + sc.icon + ' ' + sc.label + '</div>' +
       '</div>';
     }
@@ -299,7 +324,14 @@ var Forms = (function () {
     var user = Auth.getUser();
 
     var hoursOpts = CONFIG.OT_HOURS.map(function(h) {
-      var label = h < 1 ? (h * 60) + ' دقيقة' : h + ' ساعة' + (h > 1 ? '' : '');
+      var label;
+      if (h < 1) {
+        label = (h * 60) + ' دقيقة';
+      } else if (h === 1) {
+        label = '1 ساعة';
+      } else {
+        label = h + ' ساعة';
+      }
       return '<option value="' + h + '">' + label + '</option>';
     }).join('');
 
@@ -349,7 +381,7 @@ var Forms = (function () {
   function _submitOT() {
     var date  = _val('ot-date');
     var day   = _val('ot-day');
-    var hours = _val('ot-hours');
+    var hours = _val('ot-hours').replace(',', '.');
     var notes = _val('ot-notes');
 
     if (!date || !hours || !notes) { _toast('الرجاء تعبئة جميع الحقول المطلوبة', 'error'); return; }
@@ -508,7 +540,7 @@ var Forms = (function () {
             '<div class="req-row"><span>الموظف:</span><b>' + r.name + '</b></div>' +
             '<div class="req-row"><span>الوردية:</span><b>وردية ' + r.shift + '</b></div>' +
             '<div class="req-row"><span>التاريخ:</span><b>' + r.day + ' ' + r.date + '</b></div>' +
-            '<div class="req-row"><span>الساعات:</span><b>' + r.hours + ' ساعة</b></div>' +
+            '<div class="req-row"><span>الساعات:</span><b>' + _formatHours(r.hours) + '</b></div>' +
             '<div class="req-row"><span>الملاحظات:</span><span>' + r.notes + '</span></div>' +
           '</div>' +
           (canRev ?
@@ -553,6 +585,13 @@ var Forms = (function () {
 
   // ==================== مساعدات ====================
 
+  function _formatHours(h) {
+    var n = parseFloat(String(h).replace(',', '.'));
+    if (isNaN(n)) return h + ' ساعة';
+    if (n < 1) return (n * 60) + ' دقيقة';
+    return n + ' ساعة';
+  }
+
   function _val(id) {
     var el = document.getElementById(id);
     return el ? el.value.trim() : '';
@@ -579,11 +618,12 @@ var Forms = (function () {
 
   function _mapErr(code) {
     var map = {
-      forbidden:     'غير مصرح لك بهذا الإجراء',
-      duplicate_id:  'الرقم الوظيفي موجود مسبقاً',
-      not_found:     'البيانات غير موجودة',
-      same_shift:    'الموظف في نفس الوردية المحددة',
-      forbidden_shift: 'لا يمكن الإضافة لوردية أخرى'
+      forbidden:        'غير مصرح لك بهذا الإجراء',
+      duplicate_id:     'الرقم الوظيفي موجود مسبقاً',
+      not_found:        'البيانات غير موجودة',
+      same_shift:       'الموظف في نفس الوردية المحددة',
+      forbidden_shift:  'لا يمكن الإضافة لوردية أخرى',
+      invalid_role_code:'رمز التحقق للصلاحية غير صحيح'
     };
     return map[code] || (code || 'حدث خطأ غير متوقع');
   }
