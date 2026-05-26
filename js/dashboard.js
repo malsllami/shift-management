@@ -63,37 +63,53 @@ var Dashboard = (function () {
       var limit    = d.dailyLimit || 10;
       var todayStr = (new Date()).toISOString().slice(0, 10);
 
-      var dayBars = weekData.map(function(day) {
-        var pct    = limit > 0 ? Math.min(100, Math.round(day.count / limit * 100)) : 0;
-        var cls    = pct >= 95 ? 'wday-danger' :
-                     pct >= 75 ? 'wday-warn75' :
-                     pct >= 65 ? 'wday-warn65' :
-                     day.count > 0 ? 'wday-safe' : 'wday-zero';
-        var isToday = day.date === todayStr ? ' wday-today' : '';
-        var name   = CONFIG.DAYS_AR[day.dow].slice(0, 3);
-        return '<div class="week-day-chip ' + cls + isToday + '">' +
-          '<span class="wdc-num">' + day.count + '</span>' +
-          '<div class="wdc-bar-wrap"><div class="wdc-bar-fill" style="height:' + pct + '%"></div></div>' +
-          '<span class="wdc-name">' + name + '</span>' +
+      // Today's entry
+      var todayEntry = null;
+      for (var wi = 0; wi < weekData.length; wi++) {
+        if (weekData[wi].date === todayStr) { todayEntry = weekData[wi]; break; }
+      }
+      var todayCount = todayEntry ? (todayEntry.count || 0) : 0;
+      var todayPct   = limit > 0 ? Math.min(100, Math.round(todayCount / limit * 100)) : 0;
+      var gaugeColor = todayPct >= 95 ? '#F44336' : todayPct >= 75 ? '#FF9800' : todayPct >= 65 ? '#FFC107' : '#4CAF50';
+      var gaugeStatus = todayPct >= 95 ? 'تحذير!' : todayPct >= 75 ? 'مرتفع' : todayPct >= 65 ? 'متوسط' : 'طبيعي';
+
+      // SVG circular gauge  (r=36, circumference ≈ 226.2)
+      var r = 36; var circ = 2 * 3.14159 * r;
+      var filled = (todayPct / 100 * circ).toFixed(1);
+      var gaugeHtml =
+        '<div class="rwc-gauge-wrap">' +
+          '<svg viewBox="0 0 100 100" class="rwc-gauge-svg">' +
+            '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#E0EAF5" stroke-width="10"/>' +
+            '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + gaugeColor + '" stroke-width="10"' +
+              ' stroke-dasharray="' + filled + ' ' + circ.toFixed(1) + '"' +
+              ' stroke-linecap="round" transform="rotate(-90 50 50)"/>' +
+            '<text x="50" y="44" text-anchor="middle" dominant-baseline="middle" class="gauge-count-text">' + todayCount + '</text>' +
+            '<text x="50" y="58" text-anchor="middle" dominant-baseline="middle" class="gauge-pct-text">' + todayPct + '%</text>' +
+            '<text x="50" y="70" text-anchor="middle" dominant-baseline="middle" class="gauge-status-text" fill="' + gaugeColor + '">' + gaugeStatus + '</text>' +
+          '</svg>' +
+          '<div class="rwc-gauge-caption">اليوم</div>' +
+        '</div>';
+
+      // 7 day cards
+      var dayCards = weekData.map(function(day) {
+        var isToday = day.date === todayStr;
+        return '<div class="rwdc-day' + (isToday ? ' rwdc-today' : '') + '">' +
+          '<div class="rwdc-name">' + CONFIG.DAYS_AR[day.dow] + '</div>' +
+          '<div class="rwdc-count">' + day.count + '</div>' +
         '</div>';
       }).join('');
 
+      var limitLabel = limit >= 1000 ? limit.toLocaleString() : limit;
       html += '<div class="dash-card requests-week-card full-width">' +
-        '<div class="card-icon">📋</div>' +
-        '<div class="card-body">' +
-          '<div class="week-card-top">' +
-            '<span class="card-label">الطلبات الأسبوعية</span>' +
-            '<span class="week-limit-badge">الحد اليومي: ' + limit + '</span>' +
-          '</div>' +
-          '<div class="week-chart">' + dayBars + '</div>' +
-          '<div class="week-legend">' +
-            '<span class="wleg wleg-safe">طبيعي</span>' +
-            '<span class="wleg wleg-warn65">تجاوز 65%</span>' +
-            '<span class="wleg wleg-warn75">تجاوز 75%</span>' +
-            '<span class="wleg wleg-danger">95%+</span>' +
-          '</div>' +
+        '<div class="rwc-header">' +
+          '<span class="rwc-icon">📋</span>' +
+          '<span class="rwc-title">الطلبات الأسبوعية</span>' +
+          '<span class="week-limit-badge">الحد: ' + limitLabel + '</span>' +
         '</div>' +
-        // Pending mini section inside same card
+        '<div class="rwc-body">' +
+          '<div class="rwc-days">' + dayCards + '</div>' +
+          gaugeHtml +
+        '</div>' +
         '<div class="week-pending-row">' +
           '<span class="pending-chip leave-pending" onclick="App.navigate(\'leaves\')">' +
             '<span class="pending-num">' + d.pendingLeave + '</span>' +
