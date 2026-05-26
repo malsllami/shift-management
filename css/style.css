@@ -128,6 +128,13 @@ input, select, textarea { font-family: inherit; }
   margin-bottom: 0.8rem;
 }
 
+.change-pass-notice {
+  background: #FFF3E0; border: 1.5px solid #FFB74D;
+  color: #E65100; border-radius: var(--radius-sm);
+  padding: 0.7rem 1rem; font-size: 0.9rem; font-weight: 600;
+  margin-bottom: 1.2rem; text-align: center;
+}
+
 /* ============================================================
    APP SHELL
    ============================================================ */
