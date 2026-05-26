@@ -356,6 +356,7 @@ var App = (function () {
     var el = document.getElementById(containerId);
     if (!el) return;
     el.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+    window._empCache = {};
 
     API.getEmployees().then(function(res) {
       if (!res.ok) { el.innerHTML = '<div class="error-state">' + _mapError(res.error) + '</div>'; return; }
@@ -374,6 +375,7 @@ var App = (function () {
 
       html += '<div class="emp-cards-grid" id="emp-grid">';
       res.data.forEach(function(emp) {
+        window._empCache[String(emp.empId)] = emp;
         html += _empCard(emp);
       });
       html += '</div>';
@@ -416,8 +418,8 @@ var App = (function () {
         (emp.recvDaysLeft !== null ? _expiryBadge('بطاقة المستلم', emp.recvDaysLeft, recvColor, '#FFF9C4') : '') +
       '</div>' +
       '<div class="emp-card-footer">' +
-        '<button class="btn-sm btn-view" onclick="App.navigate(\'employee-view\', ' + JSON.stringify(emp) + ')">عرض</button>' +
-        (Auth.canManage() ? '<button class="btn-sm btn-edit" onclick="App.navigate(\'employee-form\', {emp:' + JSON.stringify(emp) + '})">تعديل</button>' : '') +
+        '<button class="btn-sm btn-view" onclick="App._viewEmp(\'' + emp.empId + '\')">عرض</button>' +
+        (Auth.canManage() ? '<button class="btn-sm btn-edit" onclick="App._editEmp(\'' + emp.empId + '\')">تعديل</button>' : '') +
         (Auth.isAdmin()   ? '<button class="btn-sm btn-transfer" onclick="App._transferDialog(\'' + emp.empId + '\',\'' + emp.name + '\')">نقل</button>' : '') +
       '</div>' +
     '</div>';
@@ -454,6 +456,19 @@ var App = (function () {
       document.getElementById('emp-grid').appendChild(empty);
     }
     empty.style.display = visible === 0 ? 'block' : 'none';
+  }
+
+  function _viewEmp(empId) {
+    var emp = (window._empCache || {})[String(empId)];
+    navigate('employee-view', emp || { empId: empId });
+  }
+
+  function _editEmp(empId) {
+    var emp = (window._empCache || {})[String(empId)];
+    if (emp) navigate('employee-form', { emp: emp });
+    else API.getEmployee(empId).then(function(r) {
+      if (r.ok) navigate('employee-form', { emp: r.data });
+    });
   }
 
   // Transfer dialog
@@ -551,8 +566,10 @@ var App = (function () {
     html += '</div>';  // profile-sections
 
     if (Auth.canManage() || (Auth.getUser() && Auth.getUser().empId == emp.empId)) {
+      window._empCache = window._empCache || {};
+      window._empCache[String(emp.empId)] = emp;
       html += '<div class="profile-actions">' +
-        '<button class="btn-primary" onclick="App.navigate(\'employee-form\', {emp:' + JSON.stringify(emp) + '})">تعديل البيانات</button>' +
+        '<button class="btn-primary" onclick="App._editEmp(\'' + emp.empId + '\')">تعديل البيانات</button>' +
       '</div>';
     }
 
@@ -599,9 +616,22 @@ var App = (function () {
         el.innerHTML = '<div class="empty-state">لا توجد إشعارات</div>'; return;
       }
       el.innerHTML = res.data.map(function(n) {
-        var isUnread = n.status === 'unread';
-        return '<div class="notif-item' + (isUnread ? ' notif-unread' : '') + '" onclick="App._readNotif(\'' + n.no + '\', this)">' +
-          '<div class="notif-dot-indicator' + (isUnread ? '' : ' hidden') + '"></div>' +
+        var cssClass, dotClass;
+        if (n.status === 'unread') {
+          cssClass = 'notif-unread';
+          dotClass = '';
+        } else if (n.status === 'actioned') {
+          cssClass = 'notif-done';
+          dotClass = 'gray';
+        } else {
+          // read but no action yet — check if it's a request-type notification
+          var isRequest = n.type === 'leave_request' || n.type === 'overtime_request';
+          cssClass = isRequest ? 'notif-pending-action' : 'notif-done';
+          dotClass = isRequest ? 'amber' : 'gray';
+        }
+        var navType = (n.type === 'overtime_request' || n.type === 'overtime_review') ? 'overtime' : 'leaves';
+        return '<div class="notif-item ' + cssClass + '" onclick="App._readNotif(\'' + n.no + '\',\'' + n.type + '\',\'' + n.status + '\',this)">' +
+          '<div class="notif-dot-indicator' + (dotClass ? ' ' + dotClass : '') + (n.status !== 'unread' && !dotClass ? ' hidden' : '') + '"></div>' +
           '<div class="notif-body">' +
             '<div class="notif-title">' + n.title + '</div>' +
             '<div class="notif-msg">' + n.msg + '</div>' +
@@ -612,12 +642,14 @@ var App = (function () {
     });
   }
 
-  function _readNotif(no, el) {
-    API.markNotifRead(no);
-    el.classList.remove('notif-unread');
-    var dot = el.querySelector('.notif-dot-indicator');
-    if (dot) dot.classList.add('hidden');
-    _loadNotifBadge();
+  function _readNotif(no, type, status, el) {
+    if (status === 'unread') {
+      API.markNotifRead(no);
+      _loadNotifBadge();
+    }
+    // Navigate to relevant section for request-type notifications
+    var dest = (type === 'overtime_request' || type === 'overtime_review') ? 'overtime' : 'leaves';
+    navigate(dest);
   }
 
   // ---- Settings (admin only) ----
@@ -721,6 +753,7 @@ var App = (function () {
 
   return {
     init: init, showLogin: showLogin, navigate: navigate, goBack: goBack,
+    _viewEmp: _viewEmp, _editEmp: _editEmp,
     _transferDialog: _transferDialog, _readNotif: _readNotif
   };
 })();
