@@ -375,8 +375,101 @@ input, select, textarea { font-family: inherit; }
 .today-shift-item {
   padding: 0.3rem 0.6rem;
   border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+.shift-clickable { cursor: pointer; }
+.shift-clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
 .ts-shift { font-weight: 700; margin-inline-end: 0.3rem; }
+
+/* ---- Weekly requests chart card ---- */
+.requests-week-card { display: flex; flex-direction: column; gap: 0; padding: 0 !important; overflow: hidden; }
+.requests-week-card > .card-icon { display: none; }
+.requests-week-card > .card-body { padding: 1rem 1rem 0.5rem; }
+.week-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+.week-limit-badge { font-size: 0.72rem; background: var(--surface2); color: var(--text2); padding: 2px 8px; border-radius: 20px; }
+
+.week-chart {
+  display: flex; gap: 5px; align-items: flex-end;
+  height: 75px; direction: ltr;
+}
+.week-day-chip {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 28px;
+}
+.wdc-num  { font-size: 0.7rem; font-weight: 800; color: var(--text); line-height: 1; }
+.wdc-bar-wrap {
+  width: 100%; flex: 1; border-radius: 4px;
+  background: rgba(0,0,0,0.07); overflow: hidden;
+  position: relative; min-height: 8px;
+}
+.wdc-bar-fill {
+  position: absolute; bottom: 0; width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+}
+.wdc-name { font-size: 0.6rem; color: var(--text2); white-space: nowrap; }
+
+.wday-today { outline: 2px solid var(--primary); border-radius: 4px; }
+.wday-zero  .wdc-bar-fill { background: #CFD8DC; }
+.wday-safe  .wdc-bar-fill { background: #4CAF50; }
+.wday-warn65 .wdc-bar-fill { background: #FFC107; }
+.wday-warn75 .wdc-bar-fill { background: #FF9800; }
+.wday-danger .wdc-bar-fill { background: #F44336; }
+
+.week-legend { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.wleg { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--text2); }
+.wleg::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.wleg-safe::before   { background: #4CAF50; }
+.wleg-warn65::before { background: #FFC107; }
+.wleg-warn75::before { background: #FF9800; }
+.wleg-danger::before { background: #F44336; }
+
+.week-pending-row {
+  display: flex; gap: 0; border-top: 1px solid var(--border);
+}
+.pending-chip {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 0.6rem; cursor: pointer; transition: background 0.15s;
+  font-size: 0.78rem; border-inline-end: 1px solid var(--border);
+}
+.pending-chip:last-child { border-inline-end: none; }
+.pending-chip:hover { background: var(--surface2); }
+.pending-chip .pending-num { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+.pending-chip .pending-lbl { font-size: 0.72rem; color: var(--text2); }
+.pending-chip.leave-pending .pending-num { color: #F57F17; }
+.pending-chip.ot-pending    .pending-num { color: var(--primary); }
+
+/* ---- Reviewer info in request cards ---- */
+.rev-note-block {
+  display: flex; align-items: flex-start; gap: 0.4rem;
+  padding: 0.55rem 0.8rem; border-radius: var(--radius-sm);
+  margin: 0.5rem 0; font-size: 0.84rem; line-height: 1.4;
+}
+.rev-note-block.rev-reject { background: #FFEBEE; color: #B71C1C; border-right: 3px solid #F44336; }
+.rev-note-block.rev-approve { background: #E8F5E9; color: #1B5E20; border-right: 3px solid #4CAF50; }
+.rev-note-icon  { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.rev-note-label { font-weight: 700; margin-inline-end: 4px; }
+
+.rev-by-row {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+  padding: 0.35rem 0.5rem; background: var(--surface2);
+  border-radius: var(--radius-sm); margin-top: 0.4rem; font-size: 0.78rem;
+}
+.rev-by-label { color: var(--text2); font-size: 0.75rem; }
+.rev-by-name  { font-weight: 700; color: var(--text); }
+.rev-by-id    { color: var(--text2); font-size: 0.72rem; }
+.rev-by-role  {
+  background: #E3F2FD; color: #0D47A1;
+  padding: 1px 6px; border-radius: 10px; font-size: 0.68rem; font-weight: 600;
+}
+
+/* ---- Shift view header (employees filtered by shift) ---- */
+.shift-view-header {
+  font-size: 1.1rem; font-weight: 700; color: var(--primary);
+  padding: 0.5rem 0.8rem; border-right: 4px solid var(--primary);
+  background: var(--surface2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 0.8rem;
+}
 
 .card-icon { font-size: 1.8rem; }
 .card-body { flex: 1; }
