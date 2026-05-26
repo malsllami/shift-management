@@ -288,7 +288,7 @@ var App = (function () {
         Calendar.init('view-content');
         break;
       case 'employees':
-        _renderEmployeeList('view-content');
+        _renderEmployeeList('view-content', params);
         break;
       case 'employee-form':
         Forms.renderEmployeeForm('view-content', params ? params.emp : null, !!params);
@@ -352,23 +352,30 @@ var App = (function () {
 
   // ---- Employee list ----
 
-  function _renderEmployeeList(containerId) {
+  function _renderEmployeeList(containerId, options) {
     var el = document.getElementById(containerId);
     if (!el) return;
     el.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
     window._empCache = {};
+    var filterShift = (options && options.filterShift) ? options.filterShift : '';
 
     API.getEmployees().then(function(res) {
       if (!res.ok) { el.innerHTML = '<div class="error-state">' + _mapError(res.error) + '</div>'; return; }
       if (!res.data.length) { el.innerHTML = '<div class="empty-state">لا يوجد موظفون مسجلون</div>'; return; }
 
+      var html = '';
+      if (filterShift) {
+        html += '<div class="shift-view-header">موظفو وردية ' + filterShift + '</div>';
+      }
+
       // Filter bar
-      var html = '<div class="list-filters">' +
+      html += '<div class="list-filters">' +
         '<input type="text" id="emp-search" class="search-input" placeholder="بحث بالاسم أو الرقم...">' +
         '<select id="emp-shift-filter" class="filter-select">' +
           '<option value="">كل الورديات</option>' +
           ['a','b','c','d'].map(function(k) {
-            return '<option value="' + CONFIG.SHIFTS[k].label + '">وردية ' + CONFIG.SHIFTS[k].label + '</option>';
+            var lbl = CONFIG.SHIFTS[k].label;
+            return '<option value="' + lbl + '"' + (lbl === filterShift ? ' selected' : '') + '>وردية ' + lbl + '</option>';
           }).join('') +
         '</select>' +
       '</div>';
@@ -381,13 +388,15 @@ var App = (function () {
       html += '</div>';
       el.innerHTML = html;
 
-      // Search filter
       document.getElementById('emp-search').oninput = function() {
         _filterEmpCards(res.data);
       };
       document.getElementById('emp-shift-filter').onchange = function() {
         _filterEmpCards(res.data);
       };
+
+      // Apply initial shift filter if provided from dashboard
+      if (filterShift) _filterEmpCards(res.data);
     });
   }
 
