@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="نظام إدارة الورديات - السعودية للطاقة">
+  <title>نظام إدارة الورديات — السعودية للطاقة</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- ====================== LOGIN SCREEN ====================== -->
+  <div id="screen-login">
+    <div class="login-card">
+      <div class="login-logo">
+        <!-- Logo placeholder — replace src with actual logo -->
+        <div style="font-size:2.5rem;color:var(--primary)">⚡</div>
+        <div class="login-logo-text">السعودية للطاقة</div>
+      </div>
+      <div class="login-subtitle">نظام إدارة الورديات</div>
+      <div id="login-form-container"></div>
+    </div>
+  </div>
+
+  <!-- ====================== APP SCREEN ====================== -->
+  <div id="screen-app">
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-text">⚡ إدارة الورديات</div>
+      </div>
+      <div id="sidebar-nav"></div>
+      <div class="sidebar-bottom">
+        <button id="toggle-mode-btn" style="display:none">🛡️ وضع الإدارة</button>
+        <button id="btn-logout">🚪 خروج</button>
+      </div>
+    </nav>
+
+    <!-- Main area -->
+    <div id="main-area">
+
+      <!-- Header -->
+      <header id="app-header">
+        <div class="header-brand">⚡ نظام إدارة الورديات</div>
+        <div class="header-user-info" id="header-user"></div>
+      </header>
+
+      <!-- Page content -->
+      <main id="main-content">
+        <!-- Rendered dynamically by app.js -->
+      </main>
+
+    </div><!-- /main-area -->
+
+  </div><!-- /screen-app -->
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ====================== SCRIPTS ====================== -->
+  <!-- Load order matters: config → utilities → api → auth → components → app -->
+  <script src="js/config.js"></script>
+  <script src="js/hijri.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/forms.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
