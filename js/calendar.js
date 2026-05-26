@@ -1,37 +1,24 @@
 // ============================================================
-// مكوّن التقويم الديناميكي - هجري + ميلادي + حالة الورديات
+// التقويم — كل يوم بطاقة مستقلة (هجري + ميلادي + حالة الورديات)
 // ============================================================
 
 var Calendar = (function () {
 
-  var _currentYear  = new Date().getFullYear();
-  var _currentMonth = new Date().getMonth() + 1;
-  var _scheduleData = null;
-  var _selectedShift = 'all'; // 'all' | 'أ' | 'ب' | 'ج' | 'د'
+  var _currentYear   = new Date().getFullYear();
+  var _currentMonth  = new Date().getMonth() + 1;
+  var _scheduleData  = null;
+  var _selectedShift = 'all';
+  var _containerId   = null;
 
   function init(containerId) {
-    _render(containerId);
+    _containerId = containerId;
+    _renderShell(containerId);
     _load(containerId);
   }
 
-  function _load(containerId) {
-    _showLoading(containerId);
-    API.getSchedule(_currentYear, _currentMonth).then(function(res) {
-      if (res.success) {
-        _scheduleData = res;
-        _renderCalendar(containerId, res);
-      }
-    });
-  }
+  // ---- Shell (navigation + filters) ----
 
-  function _showLoading(containerId) {
-    var el = document.getElementById(containerId);
-    if (!el) return;
-    var calEl = el.querySelector('.calendar-grid');
-    if (calEl) calEl.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-  }
-
-  function _render(containerId) {
+  function _renderShell(containerId) {
     var el = document.getElementById(containerId);
     if (!el) return;
 
@@ -39,24 +26,24 @@ var Calendar = (function () {
       '<div class="calendar-wrapper">' +
         '<div class="calendar-header">' +
           '<button class="btn-icon" id="cal-prev">&#8249;</button>' +
-          '<div class="calendar-title">' +
-            '<span id="cal-month-year"></span>' +
-          '</div>' +
+          '<span class="calendar-title" id="cal-month-year"></span>' +
           '<button class="btn-icon" id="cal-next">&#8250;</button>' +
         '</div>' +
         '<div class="shift-filter" id="shift-filter">' +
           '<button class="shift-btn active" data-shift="all">الكل</button>' +
-          '<button class="shift-btn shift-a" data-shift="أ">وردية أ</button>' +
-          '<button class="shift-btn shift-b" data-shift="ب">وردية ب</button>' +
-          '<button class="shift-btn shift-c" data-shift="ج">وردية ج</button>' +
-          '<button class="shift-btn shift-d" data-shift="د">وردية د</button>' +
+          '<button class="shift-btn shift-a" data-shift="a">وردية أ</button>' +
+          '<button class="shift-btn shift-b" data-shift="b">وردية ب</button>' +
+          '<button class="shift-btn shift-c" data-shift="c">وردية ج</button>' +
+          '<button class="shift-btn shift-d" data-shift="d">وردية د</button>' +
         '</div>' +
         '<div class="calendar-day-headers">' +
           CONFIG.DAYS_AR.map(function(d) {
             return '<div class="day-header">' + d + '</div>';
           }).join('') +
         '</div>' +
-        '<div class="calendar-grid" id="calendar-grid"></div>' +
+        '<div class="calendar-grid" id="calendar-grid">' +
+          '<div class="cal-loading"><div class="spinner"></div><span>جارٍ التحميل...</span></div>' +
+        '</div>' +
         '<div class="calendar-summary" id="calendar-summary"></div>' +
       '</div>';
 
@@ -76,101 +63,119 @@ var Calendar = (function () {
         _selectedShift = this.dataset.shift;
         el.querySelectorAll('.shift-btn').forEach(function(b) { b.classList.remove('active'); });
         this.classList.add('active');
-        if (_scheduleData) _renderCalendar(containerId, _scheduleData);
+        if (_scheduleData) _renderDays(_scheduleData);
       };
     });
   }
 
-  function _renderCalendar(containerId, res) {
-    var el    = document.getElementById(containerId);
-    if (!el) return;
+  // ---- Load from API ----
 
-    var grid  = document.getElementById('calendar-grid');
-    var title = document.getElementById('cal-month-year');
+  function _load(containerId) {
+    var grid = document.getElementById('calendar-grid');
+    if (grid) grid.innerHTML = '<div class="cal-loading"><div class="spinner"></div><span>جارٍ التحميل...</span></div>';
+
+    var titleEl = document.getElementById('cal-month-year');
+    if (titleEl) titleEl.textContent = CONFIG.MONTHS_AR[_currentMonth - 1] + ' ' + _currentYear;
+
+    API.getSchedule(_currentYear, _currentMonth).then(function(res) {
+      if (!res.ok) {
+        if (grid) grid.innerHTML = '<div class="cal-error">تعذر تحميل البيانات — تحقق من الاتصال</div>';
+        return;
+      }
+      _scheduleData = res;
+      _renderDays(res);
+    });
+  }
+
+  // ---- Render day cards ----
+
+  function _renderDays(res) {
+    var grid = document.getElementById('calendar-grid');
+    if (!grid) return;
+
     var schedule = res.schedule;
-    var colors   = res.settings;
+    var colors   = res.colors || {};
 
-    title.textContent = CONFIG.MONTHS_AR[_currentMonth - 1] + ' ' + _currentYear;
+    var today    = new Date();
+    var todayStr = today.getFullYear() + '-' + _pad(today.getMonth() + 1) + '-' + _pad(today.getDate());
 
-    // يوم الأسبوع لأول يوم في الشهر
-    var firstDay = new Date(_currentYear, _currentMonth - 1, 1).getDay();
-    var html     = '';
+    // First day-of-week offset (0=Sun)
+    var firstDow = new Date(_currentYear, _currentMonth - 1, 1).getDay();
+    var html = '';
 
-    // خلايا فارغة قبل اليوم الأول
-    for (var e = 0; e < firstDay; e++) {
-      html += '<div class="cal-cell empty"></div>';
+    // Empty cells before first day
+    for (var e = 0; e < firstDow; e++) {
+      html += '<div class="cal-cell cal-empty"></div>';
     }
 
-    var today = new Date();
-    var todayStr = today.getFullYear() + '-' +
-                   _pad(today.getMonth() + 1) + '-' +
-                   _pad(today.getDate());
-
     schedule.forEach(function(day) {
-      var hijri    = Hijri.fromDate(new Date(day.date));
-      var isToday  = day.date === todayStr;
+      var date    = new Date(day.date);
+      var hijri   = Hijri.fromDate(date);
+      var isToday = day.date === todayStr;
+      var dayNum  = parseInt(day.date.split('-')[2]);
 
-      var shifts = _getShiftsToShow(day, colors);
-
-      html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">' +
-        '<div class="cal-date">' +
-          '<span class="cal-day-num">' + parseInt(day.date.split('-')[2]) + '</span>' +
-          '<span class="cal-hijri">' + hijri.day + ' ' + CONFIG.HIJRI_MONTHS[hijri.month-1] + '</span>' +
+      html += '<div class="cal-card' + (isToday ? ' cal-today' : '') + '">' +
+        // ---- Header: day name + number ----
+        '<div class="cal-card-head">' +
+          '<span class="cal-day-name">' + CONFIG.DAYS_AR[date.getDay()] + '</span>' +
+          '<span class="cal-day-num' + (isToday ? ' today-num' : '') + '">' + dayNum + '</span>' +
         '</div>' +
-        '<div class="cal-shifts">' + shifts + '</div>' +
+        // ---- Hijri date ----
+        '<div class="cal-hijri-date">' +
+          hijri.day + ' ' + CONFIG.HIJRI_MONTHS[hijri.month - 1] +
+        '</div>' +
+        // ---- Shift rows ----
+        '<div class="cal-shifts-rows">' + _buildShiftRows(day, colors) + '</div>' +
       '</div>';
     });
 
     grid.innerHTML = html;
-
-    // ملخص الشهر
     _renderSummary(res.summary, colors);
   }
 
-  function _getShiftsToShow(day, colors) {
-    var shiftMap = [
-      { key: 'أ', status: day.shiftA, color: colors.colorA },
-      { key: 'ب', status: day.shiftB, color: colors.colorB },
-      { key: 'ج', status: day.shiftC, color: colors.colorC },
-      { key: 'د', status: day.shiftD, color: colors.colorD }
+  function _buildShiftRows(day, colors) {
+    var entries = [
+      { key: 'a', en: day.a },
+      { key: 'b', en: day.b },
+      { key: 'c', en: day.c },
+      { key: 'd', en: day.d }
     ];
-
     var html = '';
-    shiftMap.forEach(function(s) {
-      if (_selectedShift !== 'all' && s.key !== _selectedShift) return;
-      var sc = CONFIG.STATUS_COLORS[s.status] || CONFIG.STATUS_COLORS['إجازة'];
-      html += '<span class="shift-badge" style="background:' + sc.bg + ';color:' + sc.text + ';border:1px solid ' + sc.badge + '">' +
-        s.key + ':' + _statusIcon(s.status) +
-      '</span>';
+    entries.forEach(function(s) {
+      if (_selectedShift !== 'all' && _selectedShift !== s.key) return;
+      var sc    = CONFIG.STATUS[s.en] || CONFIG.STATUS.off;
+      var shift = CONFIG.SHIFTS[s.key] || {};
+      html += '<div class="cal-shift-row">' +
+        '<span class="cal-shift-label" style="background:' + (colors[s.key] || shift.solid || '#999') + '">' +
+          (shift.label || s.key) +
+        '</span>' +
+        '<span class="cal-status-badge" style="background:' + sc.bg + ';color:' + sc.text + ';border-color:' + sc.badge + '">' +
+          sc.icon + ' ' + sc.label +
+        '</span>' +
+      '</div>';
     });
     return html;
   }
 
-  function _statusIcon(status) {
-    if (status === 'صباح')  return '☀';
-    if (status === 'مساء')  return '🌙';
-    return '—';
-  }
+  // ---- Summary table ----
 
   function _renderSummary(summary, colors) {
     var el = document.getElementById('calendar-summary');
-    if (!el) return;
+    if (!el || !summary) return;
 
-    var shifts = ['أ', 'ب', 'ج', 'د'];
-    if (_selectedShift !== 'all') shifts = [_selectedShift];
+    var keys = _selectedShift === 'all' ? ['a','b','c','d'] : [_selectedShift];
+    var html = '<div class="summary-title">ملخص الشهر</div><div class="summary-grid">';
 
-    var html = '<div class="summary-title">ملخص الشهر</div>' +
-               '<div class="summary-grid">';
-
-    shifts.forEach(function(s) {
-      var data  = summary[s] || {};
-      var colorMap = { 'أ': colors.colorA, 'ب': colors.colorB, 'ج': colors.colorC, 'د': colors.colorD };
-      html += '<div class="summary-card" style="border-right:4px solid ' + colorMap[s] + '">' +
-        '<div class="summary-shift" style="color:' + colorMap[s] + '">وردية ' + s + '</div>' +
+    keys.forEach(function(k) {
+      var data  = summary[k] || {};
+      var shift = CONFIG.SHIFTS[k] || {};
+      var color = colors[k] || shift.solid || '#999';
+      html += '<div class="summary-card" style="border-top:3px solid ' + color + '">' +
+        '<div class="summary-shift-label" style="color:' + color + '">وردية ' + (shift.label || k) + '</div>' +
         '<div class="summary-stats">' +
-          '<span class="stat-item morning-stat">☀ صباح: <b>' + (data['صباح'] || 0) + '</b></span>' +
-          '<span class="stat-item evening-stat">🌙 مساء: <b>' + (data['مساء'] || 0) + '</b></span>' +
-          '<span class="stat-item off-stat">— إجازة: <b>' + (data['إجازة'] || 0) + '</b></span>' +
+          '<div class="stat-row morning-stat"><span>' + (CONFIG.STATUS.morning.icon) + ' صباح</span><b>' + (data.morning || 0) + '</b></div>' +
+          '<div class="stat-row evening-stat"><span>' + (CONFIG.STATUS.evening.icon) + ' مساء</span><b>' + (data.evening || 0) + '</b></div>' +
+          '<div class="stat-row off-stat"><span>' + (CONFIG.STATUS.off.icon) + ' إجازة</span><b>' + (data.off || 0) + '</b></div>' +
         '</div>' +
       '</div>';
     });
