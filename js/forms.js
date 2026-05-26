@@ -32,9 +32,13 @@ var Forms = (function () {
           _field('مقاس السفتي شوز',      'shoes', empData ? empData.shoes : '') +
           _field('مقاس CAT 4',           'cat4',  empData ? empData.cat4  : '') +
           '<div class="form-section-title">البطاقات</div>' +
-          _field('تاريخ انتهاء بطاقة العمل',   'workExpDate', empData ? empData.workExpDate  : '', 'date') +
-          _field('تاريخ انتهاء بطاقة المصدر',  'srcExpDate',  empData ? empData.srcExpDate   : '', 'date') +
-          _field('تاريخ انتهاء بطاقة المستلم', 'recvExpDate', empData ? empData.recvExpDate  : '', 'date') +
+          _field('تاريخ انتهاء بطاقة العمل',   'workExpDate', empData ? CONFIG.fmtDate(empData.workExpDate)  : '', 'date') +
+          _field('تاريخ انتهاء بطاقة المصدر',  'srcExpDate',  empData ? CONFIG.fmtDate(empData.srcExpDate)   : '', 'date') +
+          _field('تاريخ انتهاء بطاقة المستلم', 'recvExpDate', empData ? CONFIG.fmtDate(empData.recvExpDate)  : '', 'date') +
+          (isEdit && isAdminEdit ?
+            '<div class="form-section-title">الإجازات</div>' +
+            (role === 'مدير' ? _field('رصيد الإجازات السنوية', 'annLeave', empData ? (empData.annLeave || 0) : '') : '') +
+            _field('الإجازة المجدولة (مخصوم من المتبقي)', 'schedLeave', empData ? (empData.schedLeave || 0) : '') : '') +
           '<div class="form-actions">' +
             '<button type="submit" class="btn-primary">' + (isEdit ? 'حفظ التعديلات' : 'إضافة الموظف') + '</button>' +
             '<button type="button" class="btn-secondary" onclick="App.goBack()">إلغاء</button>' +
@@ -154,6 +158,12 @@ var Forms = (function () {
           _toast('الرجاء إدخال رمز التحقق للصلاحية المحددة', 'error');
           return;
         }
+      }
+      var schedVal = _val('ef-schedLeave');
+      if (schedVal !== '') updates.schedLeave = parseFloat(schedVal) || 0;
+      if (Auth.getEffectiveRole() === 'مدير') {
+        var annVal = _val('ef-annLeave');
+        if (annVal !== '') updates.annLeave = parseFloat(annVal) || 0;
       }
     }
     _setLoading(true);
@@ -342,8 +352,10 @@ var Forms = (function () {
           '</div>' +
           '<div class="form-field">' +
             '<label>عدد الساعات <span class="req">*</span></label>' +
-            '<input type="text" id="ot-hours" class="form-input" inputmode="decimal" placeholder="مثال: 1 أو 2.5 أو 0.5" required>' +
-            '<small class="field-hint">أدخل عدد الساعات كرقم — كل إدخال يُعامَل كساعات</small>' +
+            '<div class="ot-hours-row">' +
+              '<input type="text" id="ot-hours" class="form-input ot-hours-input" inputmode="decimal" placeholder="مثال: 1.5" required>' +
+              '<span class="ot-hours-unit">ساعة</span>' +
+            '</div>' +
           '</div>' +
           '<div class="form-field full-width">' +
             '<label>سبب وتفاصيل العمل الإضافي <span class="req">*</span></label>' +
@@ -447,7 +459,7 @@ var Forms = (function () {
             '<div class="req-row"><span>الموظف:</span><b>' + r.name + '</b></div>' +
             '<div class="req-row"><span>الوردية:</span><b>وردية ' + r.shift + '</b></div>' +
             '<div class="req-row"><span>نوع الإجازة:</span><b>' + typeLabel(r.type) + '</b></div>' +
-            '<div class="req-row"><span>المدة:</span><b>' + r.startDate + ' — ' + r.endDate + ' (' + r.days + ' يوم)</b></div>' +
+            '<div class="req-row"><span>المدة:</span><b>' + CONFIG.fmtDate(r.startDate) + ' — ' + CONFIG.fmtDate(r.endDate) + ' (' + r.days + ' يوم)</b></div>' +
             (r.empNotes ? '<div class="req-row"><span>ملاحظات:</span><span>' + r.empNotes + '</span></div>' : '') +
             (r.revNotes ? '<div class="req-row"><span>ملاحظة المراجع:</span><span>' + r.revNotes + '</span></div>' : '') +
           '</div>' +
@@ -531,7 +543,7 @@ var Forms = (function () {
           '<div class="req-card-body">' +
             '<div class="req-row"><span>الموظف:</span><b>' + r.name + '</b></div>' +
             '<div class="req-row"><span>الوردية:</span><b>وردية ' + r.shift + '</b></div>' +
-            '<div class="req-row"><span>التاريخ:</span><b>' + r.day + ' ' + r.date + '</b></div>' +
+            '<div class="req-row"><span>التاريخ:</span><b>' + r.day + ' ' + CONFIG.fmtDate(r.date) + '</b></div>' +
             '<div class="req-row"><span>الساعات:</span><b>' + _formatHours(r.hours) + '</b></div>' +
             '<div class="req-row"><span>الملاحظات:</span><span>' + r.notes + '</span></div>' +
           '</div>' +
