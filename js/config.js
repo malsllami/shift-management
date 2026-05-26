@@ -114,6 +114,14 @@ var CONFIG = {
   MONTHS_AR: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
   HIJRI_MONTHS: ['محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'],
 
+  // Helper: strip time from ISO date strings (2026-03-29T21:00:00.000Z → 2026-03-29)
+  fmtDate: function(val) {
+    if (!val) return '';
+    var s = String(val);
+    var m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    return m ? m[1] : s;
+  },
+
   // Helper: get expiry color class based on days left
   expiryColor: function(daysLeft) {
     if (daysLeft === null) return null;
