@@ -5,7 +5,7 @@
 
 var CONFIG = {
   // Google Apps Script Web App URL — fill after deployment
-  API_URL: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxch8YULmavC4_MbvcnzUwMuGiwPMSlX6NMHAX2VTYwLBthIX4UkyFmsvJsTzOiSBuXrQ/exec',
 
   // ---- Brand colors (Saudi Energy logo) ----
   BRAND: {
