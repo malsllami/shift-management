@@ -323,18 +323,6 @@ var Forms = (function () {
     if (!el) return;
     var user = Auth.getUser();
 
-    var hoursOpts = CONFIG.OT_HOURS.map(function(h) {
-      var label;
-      if (h < 1) {
-        label = (h * 60) + ' دقيقة';
-      } else if (h === 1) {
-        label = '1 ساعة';
-      } else {
-        label = h + ' ساعة';
-      }
-      return '<option value="' + h + '">' + label + '</option>';
-    }).join('');
-
     el.innerHTML =
       '<div class="form-container">' +
         '<div class="form-header"><h2>طلب ساعات أوفرتايم</h2></div>' +
@@ -354,7 +342,8 @@ var Forms = (function () {
           '</div>' +
           '<div class="form-field">' +
             '<label>عدد الساعات <span class="req">*</span></label>' +
-            '<select id="ot-hours" class="form-input" required>' + hoursOpts + '</select>' +
+            '<input type="text" id="ot-hours" class="form-input" inputmode="decimal" placeholder="مثال: 1 أو 2.5 أو 0.5" required>' +
+            '<small class="field-hint">أدخل عدد الساعات كرقم — كل إدخال يُعامَل كساعات</small>' +
           '</div>' +
           '<div class="form-field full-width">' +
             '<label>سبب وتفاصيل العمل الإضافي <span class="req">*</span></label>' +
@@ -385,6 +374,9 @@ var Forms = (function () {
     var notes = _val('ot-notes');
 
     if (!date || !hours || !notes) { _toast('الرجاء تعبئة جميع الحقول المطلوبة', 'error'); return; }
+    var hoursNum = parseFloat(hours);
+    if (isNaN(hoursNum) || hoursNum <= 0) { _toast('عدد الساعات يجب أن يكون رقماً موجباً', 'error'); return; }
+    hours = String(hoursNum);
 
     _setLoading(true);
     API.submitOvertime({ date: date, day: day, hours: hours, notes: notes })
