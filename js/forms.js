@@ -60,11 +60,16 @@ var Forms = (function () {
   }
 
   function _field(label, id, val, type, disabled, required) {
+    var inputHtml = '<input type="' + (type || 'text') + '" id="ef-' + id + '" value="' + _esc(val || '') + '"' +
+      (disabled ? ' disabled' : '') + (required ? ' required' : '') + ' class="form-input">';
+    if (type === 'password') {
+      inputHtml = '<div class="pw-wrap">' + inputHtml +
+        '<button type="button" class="pw-eye" onclick="window._togglePw(\'ef-' + id + '\',this)" title="إظهار/إخفاء">👁</button>' +
+        '</div>';
+    }
     return '<div class="form-field">' +
       '<label>' + label + (required ? ' <span class="req">*</span>' : '') + '</label>' +
-      '<input type="' + (type || 'text') + '" id="ef-' + id + '" value="' + _esc(val || '') + '"' +
-        (disabled ? ' disabled' : '') + (required ? ' required' : '') +
-        ' class="form-input">' +
+      inputHtml +
     '</div>';
   }
 
@@ -86,7 +91,10 @@ var Forms = (function () {
       '<select id="ef-role" class="form-input">' + opts + '</select></div>' +
       '<div class="form-field" id="role-code-field" style="' + (showCode ? '' : 'display:none') + '">' +
         '<label>رمز التحقق للصلاحية <span class="req">*</span></label>' +
-        '<input type="password" id="ef-role-code" class="form-input" placeholder="أدخل رمز الصلاحية المحدد في الإعدادات">' +
+        '<div class="pw-wrap">' +
+          '<input type="password" id="ef-role-code" class="form-input" placeholder="أدخل رمز الصلاحية المحدد في الإعدادات">' +
+          '<button type="button" class="pw-eye" onclick="window._togglePw(\'ef-role-code\',this)" title="إظهار/إخفاء">👁</button>' +
+        '</div>' +
       '</div>';
   }
 
